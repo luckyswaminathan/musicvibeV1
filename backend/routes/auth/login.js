@@ -3,10 +3,16 @@ const cors = require('cors');
 const axios = require('axios');
 const supabase = require('../../supabase');
 const querystring = require('querystring');
+const { get } = require('http');
 
 
 const router = Router();
-router.use(cors());
+router.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
+
 function generateRandomString(length) {
   var result = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -19,7 +25,9 @@ function generateRandomString(length) {
 client_id = 'dc023414ef984d4cb0eb8578dca17ffc';
 client_secret = 'e5adf81fcc114847999b33be007b32c0';
 redirect_uri = 'http://localhost:3001/api/auth/callback';
+router.options('/api/auth/login', cors()); 
 /**
+ * 
  * @swagger
  * /api/auth/login:
  *   post:
@@ -42,32 +50,66 @@ redirect_uri = 'http://localhost:3001/api/auth/callback';
  *         description: Invalid credentials
  */
 router.get('/login', async function(req, res) {
-    var state = generateRandomString(16);
-    var scope = 'user-read-private user-read-email';
-  
-    const url = 'https://accounts.spotify.com/authorize?' +
-      querystring.stringify({
-        response_type: 'code',
-        client_id: client_id,
-        scope: scope,
-        redirect_uri: redirect_uri,
-        state: state
-      });
-    res.redirect(url);
-  });
+  var state = generateRandomString(16);
+  var scope = 'user-read-private user-read-email user-top-read user-library-read';
+
+  const url = 'https://accounts.spotify.com/authorize?' +
+    querystring.stringify({
+      response_type: 'code',
+      client_id: client_id,
+      scope: scope,
+      redirect_uri: redirect_uri,
+      state: state
+    });
+  res.redirect(url);
+});
 
 router.get('/callback', async (req, res) => {
-  const { code, state } = req.query;
+const { code, state } = req.query;
+
+if (!code) {
+  return res.status(400).json({ error: 'Authorization code not found' });
+}
+
+try {
+  const tokenResponse = await axios.post('https://accounts.spotify.com/api/token', querystring.stringify({
+    grant_type: 'authorization_code',
+    code: code,
+    redirect_uri: redirect_uri,
+    client_id: client_id,
+    client_secret: client_secret,
+  }), {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
+
+  const { access_token, refresh_token, expires_in } = tokenResponse.data;
+
+    // Return the tokens and other necessary data as JSON to the frontend
   
-  if (!code) {
-    return res.status(400).json({ error: 'Authorization code not found' });
+  return res.json({
+    access_token: access_token,
+    refresh_token: refresh_token,
+    expires_in: expires_in,
+  });
+} catch (error) {
+  console.error('Error exchanging authorization code for token:', error);
+  return res.status(500).json({ error: 'Failed to exchange authorization code for token' });
+}
+});
+
+router.get('/refresh', async (req, res) => {
+  const { refresh_token } = req.query;
+
+  if (!refresh_token) {
+    return res.status(400).json({ error: 'Refresh token not found' });
   }
-  
+
   try {
     const tokenResponse = await axios.post('https://accounts.spotify.com/api/token', querystring.stringify({
-      grant_type: 'authorization_code',
-      code: code,
-      redirect_uri: redirect_uri,
+      grant_type: 'refresh_token',
+      refresh_token: refresh_token,
       client_id: client_id,
       client_secret: client_secret,
     }), {
@@ -75,18 +117,17 @@ router.get('/callback', async (req, res) => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
-  
-    const { access_token, refresh_token, expires_in } = tokenResponse.data;
-  
-      // Return the tokens and other necessary data as JSON to the frontend
+
+    const { access_token, expires_in } = tokenResponse.data;
+
+    // Return the new access token and expiry time as JSON to the frontend
     return res.json({
       access_token: access_token,
-      refresh_token: refresh_token,
       expires_in: expires_in,
     });
   } catch (error) {
-    console.error('Error exchanging authorization code for token:', error);
-    return res.status(500).json({ error: 'Failed to exchange authorization code for token' });
+    console.error('Error refreshing token:', error);
+    return res.status(500).json({ error: 'Failed to refresh token' });
   }
 });
 module.exports = router;

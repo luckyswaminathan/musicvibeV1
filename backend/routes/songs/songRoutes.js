@@ -1,7 +1,11 @@
 const express = require('express');
+const groq = require('../../groqClient');
 const router = express.Router();
+const supabase = require('../../supabase');
 const axios = require('axios');
-const access_token = 'eyJhbGciOiJIUzI1NiIsImtpZCI6IjlWZlhvZXk2MFRMREVZTVgiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3Rlb3B0bHNrd2ZzcWF5cGhndWVoLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIxNzYwMTlkOC04ODFmLTRmNWQtYjYzMi1hZDYwM2VmMTcxYjQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzI0MjE0MTY5LCJpYXQiOjE3MjQyMTA1NjksImVtYWlsIjoibGFrc2htYW4uc3dhbWluYXRoYW4xQGdtYWlsLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZ2l0aHViIiwicHJvdmlkZXJzIjpbImdpdGh1YiJdfSwidXNlcl9tZXRhZGF0YSI6eyJhdmF0YXJfdXJsIjoiaHR0cHM6Ly9hdmF0YXJzLmdpdGh1YnVzZXJjb250ZW50LmNvbS91LzUzMTMyNDE2P3Y9NCIsImVtYWlsIjoibGFrc2htYW4uc3dhbWluYXRoYW4xQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmdWxsX25hbWUiOiJMYWtzaG1hbiBTd2FtaW5hdGhhbiIsImlzcyI6Imh0dHBzOi8vYXBpLmdpdGh1Yi5jb20iLCJuYW1lIjoiTGFrc2htYW4gU3dhbWluYXRoYW4iLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6Imx1Y2t5c3dhbWluYXRoYW4iLCJwcm92aWRlcl9pZCI6IjUzMTMyNDE2Iiwic3ViIjoiNTMxMzI0MTYiLCJ1c2VyX25hbWUiOiJsdWNreXN3YW1pbmF0aGFuIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoib2F1dGgiLCJ0aW1lc3RhbXAiOjE3MjQyMTA1Njl9XSwic2Vzc2lvbl9pZCI6ImQxOTkxZGYwLWI2ZDQtNDJjZS1hYjY2LWM3MmVhNGM5ZDJkOCIsImlzX2Fub255bW91cyI6ZmFsc2V9.nf3sEujWTU4-IhiR7PC-rdzKEml8nr9U3chBGs-oXf8'
+const { parseSpotifyResponse, insertSongs } = require('./songRoutesHelper');
+const { getGroqChatCompletion } = require('../../groqClient');
+
 /**
  * @swagger
  * /api/songs/top:
@@ -25,7 +29,8 @@ const access_token = 'eyJhbGciOiJIUzI1NiIsImtpZCI6IjlWZlhvZXk2MFRMREVZTVgiLCJ0eX
  *         description: Access token is missing
  */
 router.get('/top', async (req, res) => {
-    const access_token = req.headers.authorization?.split(' ')[1];
+    const access_token = 'BQBAXJuDtemad-8_BWbMJrppzDMcLhZAdcrqLx8ioUfHRkjRHKwHAky4s2k3ED7MrEJ5tr6vj9WRJO1bTF2ZmUeZI0iERCbjMIbCwfj5WBg9meGADgZACMOBqAaD8xvytbqGTXJOfNkLQayYdpR0_Hvfjf6d2Imz2gj_mfcxIOakjAOY-egDBSX237E2KKwRpbwgMlYyqWSJrJ9JbkJRoEV5rsC8LzUrpg';
+    // const access_token = req.access_token;
     
     if (!access_token) {
         return res.status(401).json({ error: 'Access token is missing' });
@@ -37,12 +42,84 @@ router.get('/top', async (req, res) => {
                 Authorization: `Bearer ${access_token}`
             }
         });
-
-        return res.status(200).json(response.data);
+        const songs = response.data.items.map(item => ({
+            songName: item.name,
+            artistName: item.album.artists[0].name
+          }));
+        return res.status(200).json(songs);
     } catch (err) {
         console.error('Error fetching top tracks:', err.message);
         return res.status(500).json({ error: 'Failed to fetch top tracks' });
     }
 });
 
+router.get('/recommend', async (req, res) => {
+    const access_token = 'BQDksAB6AoUVA2D5WrD69yllGB7iIoMSJCG25Q-RZ8om51n3fZOVN-OPJHnynh15Wr4VKGKCyZKx5Yg8DoOgu252d-YKTYOmCCkUooZ_YMFZhfnPmGgxK6Z5REHl1SYrv1yeikaG6UsfM2RzVLgbV5q4QUOTEvRSbzhDi2lTZRgULRkjxNGGgEOsQVZbLfUP5RlL5z9bX5P5uiNmnGjfWYyfiePTgyGIBw';
+    try {
+        
+        const prompt = req.query.prompt || 'I am feeling neutral';
+        const completion = await getGroqChatCompletion(prompt);
+        const seed_genres = req.query.seed_genres || 'pop';
+
+        const response = await axios.get('https://api.spotify.com/v1/recommendations', {
+            headers: {
+                Authorization: `Bearer ${access_token}`
+            },
+            params: {
+                seed_genres: seed_genres,
+                limit: 50,
+                market: 'ES',
+                // min_acousticness: completion.min_acousticness,
+                // max_acousticness: completion.max_acousticness,
+                target_acousticness: completion.target_acousticness,
+                // min_danceability: completion.min_danceability,
+                // max_danceability: completion.max_danceability,
+                target_danceability: completion.target_danceability,
+                // min_energy: completion.min_energy,
+                // max_energy: completion.max_energy,
+                target_energy: completion.target_energy,
+                // min_instrumentalness: completion.min_instrumentalness,
+                // max_instrumentalness: completion.max_instrumentalness,
+                target_instrumentalness: completion.target_instrumentalness,
+                // min_liveness: completion.min_liveness,
+                // max_liveness: completion.max_liveness,
+                target_liveness: completion.target_liveness,
+                // min_loudness: completion.min_loudness,
+                // max_loudness: completion.max_loudness,
+                target_loudness: completion.target_loudness,
+                //min_key: completion.min_key,
+                // max_key: completion.max_key,
+                target_key: completion.target_key,
+                // min_mode: completion.min_mode,
+                // max_mode: completion.max_mode,
+                target_mode: Math.round(completion.target_mode),
+                // min_popularity: completion.min_popularity,
+                // max_popularity: completion.max_popularity,
+                target_popularity: completion.target_popularity,
+                // min_speechiness: completion.min_speechiness,
+                // max_speechiness: completion.max_speechiness,
+                target_speechiness: completion.target_speechiness,
+                // min_tempo: completion.min_tempo,
+                // max_tempo: completion.max_tempo,
+                target_tempo: completion.target_tempo,
+                // min_time_signature: completion.min_time_signature,
+                // max_time_signature: completion.max_time_signature,
+                target_time_signature: completion.target_time_signature,
+                // min_valence: completion.min_valence,
+                // max_valence: completion.max_valence,
+                target_valence: completion.target_valence,
+
+            }
+        });
+
+
+        const parsedTracks = parseSpotifyResponse(response.data);
+        await insertSongs(parsedTracks);
+        res.json(parsedTracks);
+        
+    } catch (error) {
+        console.error('Error in /recommend route:', error);
+        res.json({error: error});
+    }
+});
 module.exports = router;
