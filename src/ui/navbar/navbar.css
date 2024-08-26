@@ -1,0 +1,38 @@
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Ensures that the menu and search input are spaced apart */
+    background-color: #E94824; /* Tomato color */
+    padding: 10px;
+    padding-bottom: 100px;
+    width: 100%; /* Makes the navbar fill the width */
+    box-sizing: border-box; /* Includes padding in width calculation */
+    top: 0; /* Aligns the navbar at the top of the viewport */
+    left: 0; /* Aligns the navbar to the left of the viewport */
+    z-index: 1000; /* Ensures the navbar stays on top of other content */
+}
+.menu-icon {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.label {
+    background: none;
+    border: none;
+    color: white;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.search-input {
+    flex-grow: 1;
+    padding: 8px;
+    margin-left: 10px;
+}
+
+.label:focus, .menu-icon:focus, .search-input:focus {
+    outline: none;
+}
