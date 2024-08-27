@@ -9,7 +9,7 @@ import MusicVibe from "@/ui/musicvibe/musicvibe";
 import { Button } from "@/components/button"
 import SongImage from "@/components/song-image";
 import SongComponent from "@/components/song-component";
-import SpotifyButtonServer from "@/ui/spotify-auth/spotify-auth-button-server";
+import PlaylistPage from "./playlist/page";
 export default async function Home() {
   console.log(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const supabase = createServerComponentClient({ cookies }, {
@@ -36,6 +36,7 @@ export default async function Home() {
     </div>
       <SongComponent name={"Song Name"} url={"https://i.scdn.co/image/ab67616d0000b2733f203b8d0d8e54fab416a825"} access_token={accessToken}/>
       </div>
+
     
   );
 }

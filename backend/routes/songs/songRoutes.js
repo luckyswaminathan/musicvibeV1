@@ -1,10 +1,10 @@
 const express = require('express');
-const groq = require('../../groqClient');
+const groq = require('../../helpers/groqClient');
 const router = express.Router();
 const supabase = require('../../supabase');
 const axios = require('axios');
 const {parseSpotifyResponse, insertSongs, getValidAccessToken } = require('./songRoutesHelper');
-const { getGroqChatCompletion } = require('../../groqClient');
+const { getGroqChatCompletion } = require('../../helpers/groqClient');
 
 /**
  * @swagger
@@ -49,7 +49,6 @@ router.get('/top', async (req, res) => {
           }));
         return res.status(200).json(songs);
     } catch (err) {
-        console.error('Error fetching top tracks:', err.message);
         return res.status(500).json({ error: 'Failed to fetch top tracks' });
     }
 });
@@ -123,7 +122,6 @@ router.get('/recommend', async (req, res) => {
         res.json(parsedTracks);
         
     } catch (error) {
-        console.error('Error in /recommend route:', error);
         res.json({error: error});
     }
 });

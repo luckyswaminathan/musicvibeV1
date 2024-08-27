@@ -1,4 +1,5 @@
 const supabase = require('../../supabase');
+const axios = require('axios');
 
 
 async function getValidAccessToken(userId) {
@@ -10,12 +11,11 @@ async function getValidAccessToken(userId) {
   console.log('Getting valid access token for user:', userId);
   const { data, error } = await supabase
     .from('users')
-    .select('access_token, expires_at')
+    .select('access_token, expires_at, refresh_token')
     .eq('id', userId)
     .single();
 
   if (error) {
-    console.error('Error fetching user data:', error);
     throw error;
   }
   if (!data) {
@@ -31,7 +31,7 @@ async function getValidAccessToken(userId) {
 
   if (now >= expiresAt) {
     try {
-      const refreshResponse = await axios.get(`http://localhost:3000/api/auth/refresh?userId=${userId}`);
+      const refreshResponse = await axios.get(`http://localhost:3001/api/auth/refresh?userId=${userId}&refresh_token=${data.refresh_token}`);
       return refreshResponse.data.access_token;
     } catch (refreshError) {
       throw refreshError;
@@ -98,7 +98,7 @@ async function insertSongs(songs) {
         });
   
       if (error) {
-        console.error('Error inserting song:', song.trackName, error);
+        return error;
       } else {
         console.log('Inserted/Updated song:', song.trackName);
       }

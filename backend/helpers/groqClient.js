@@ -16,6 +16,19 @@ function extractParameter(content, parameterName) {
     return null;
 }
 
+async function generatePrompt() {
+    const response = await groq.chat.completions.create({
+        messages: [
+            {
+                role: "user",
+                content: "Generate a neutral prompt that can be answered to create a Spotify playlist."
+            }
+        ],
+        model: "llama3-8b-8192"
+    });
+
+    return response.choices[0]?.message?.content;
+}
 
 async function getGroqChatCompletion(prompt) {
   const response = await groq.chat.completions.create({
@@ -195,4 +208,4 @@ async function getGroqChatCompletion(prompt) {
     return parameters;
 }
 
-module.exports = { groq, getGroqChatCompletion };
+module.exports = { groq, getGroqChatCompletion, generatePrompt };

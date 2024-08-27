@@ -108,14 +108,12 @@ try {
     expires_in: expires_in,
   });
 } catch (error) {
-  console.error('Error exchanging authorization code for token:', error);
   return res.status(500).json({ error: 'Failed to exchange authorization code for token' });
 }
 });
 
 router.get('/refresh', async (req, res) => {
-  const { refresh_token } = req.query.refresh_token;
-  const userId = req.query.userId;
+  const { refresh_token, userId } = req.query;
   
 
   if (!refresh_token) {
@@ -124,7 +122,6 @@ router.get('/refresh', async (req, res) => {
   if (!userId) {
     return res.status(400).json({ error: 'User ID not found' });
   }
-
   try {
     const tokenResponse = await axios.post('https://accounts.spotify.com/api/token', querystring.stringify({
       grant_type: 'refresh_token',
@@ -152,7 +149,6 @@ router.get('/refresh', async (req, res) => {
       expires_at: Math.floor(Date.now() / 1000) + expires_in,
     });
   } catch (error) {
-    console.error('Error refreshing token:', error);
     return res.status(500).json({ error: 'Failed to refresh token' });
   }
 });
