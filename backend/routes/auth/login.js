@@ -50,8 +50,11 @@ router.options('/api/auth/login', cors());
  *         description: Invalid credentials
  */
 router.get('/login', async function(req, res) {
-  var state = generateRandomString(16);
+  const userId = req.query.userId;
+  const state = generateRandomString(16) + '.' + userId; 
+  
   var scope = 'user-read-private user-read-email user-top-read user-library-read';
+  
 
   const url = 'https://accounts.spotify.com/authorize?' +
     querystring.stringify({
@@ -66,7 +69,10 @@ router.get('/login', async function(req, res) {
 
 router.get('/callback', async (req, res) => {
 const { code, state } = req.query;
-
+const [stateString, userId] = state.split('.');
+if (!userId) {
+  return res.status(400).json({ error: 'User ID not found in state' });
+}
 if (!code) {
   return res.status(400).json({ error: 'Authorization code not found' });
 }
@@ -86,7 +92,15 @@ try {
 
   const { access_token, refresh_token, expires_in } = tokenResponse.data;
 
-    // Return the tokens and other necessary data as JSON to the frontend
+  await supabase.from('users').upsert({
+    id: userId,
+    access_token: access_token,
+    refresh_token: refresh_token,
+    expires_at: Math.floor(Date.now() / 1000) + expires_in,
+  }, {
+    onConflict: 'id',
+  });
+  console.log('Upserted token:', access_token, userId);
   
   return res.json({
     access_token: access_token,
@@ -100,10 +114,15 @@ try {
 });
 
 router.get('/refresh', async (req, res) => {
-  const { refresh_token } = req.query;
+  const { refresh_token } = req.query.refresh_token;
+  const userId = req.query.userId;
+  
 
   if (!refresh_token) {
     return res.status(400).json({ error: 'Refresh token not found' });
+  } 
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID not found' });
   }
 
   try {
@@ -120,10 +139,17 @@ router.get('/refresh', async (req, res) => {
 
     const { access_token, expires_in } = tokenResponse.data;
 
-    // Return the new access token and expiry time as JSON to the frontend
+    await supabase.from('users').upsert({
+      id: userId,
+      access_token: access_token,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      refresh_token: refresh_token,
+    }, {
+      onConflict: 'id',
+    });
     return res.json({
       access_token: access_token,
-      expires_in: expires_in,
+      expires_at: Math.floor(Date.now() / 1000) + expires_in,
     });
   } catch (error) {
     console.error('Error refreshing token:', error);

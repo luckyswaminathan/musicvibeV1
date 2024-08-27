@@ -3,7 +3,7 @@ const groq = require('../../groqClient');
 const router = express.Router();
 const supabase = require('../../supabase');
 const axios = require('axios');
-const { parseSpotifyResponse, insertSongs } = require('./songRoutesHelper');
+const {parseSpotifyResponse, insertSongs, getValidAccessToken } = require('./songRoutesHelper');
 const { getGroqChatCompletion } = require('../../groqClient');
 
 /**
@@ -29,7 +29,8 @@ const { getGroqChatCompletion } = require('../../groqClient');
  *         description: Access token is missing
  */
 router.get('/top', async (req, res) => {
-    const access_token = 'BQBAXJuDtemad-8_BWbMJrppzDMcLhZAdcrqLx8ioUfHRkjRHKwHAky4s2k3ED7MrEJ5tr6vj9WRJO1bTF2ZmUeZI0iERCbjMIbCwfj5WBg9meGADgZACMOBqAaD8xvytbqGTXJOfNkLQayYdpR0_Hvfjf6d2Imz2gj_mfcxIOakjAOY-egDBSX237E2KKwRpbwgMlYyqWSJrJ9JbkJRoEV5rsC8LzUrpg';
+    const userId = req.query.userId;
+    const access_token = await getValidAccessToken(userId);
     // const access_token = req.access_token;
     
     if (!access_token) {
@@ -54,7 +55,11 @@ router.get('/top', async (req, res) => {
 });
 
 router.get('/recommend', async (req, res) => {
-    const access_token = 'BQDksAB6AoUVA2D5WrD69yllGB7iIoMSJCG25Q-RZ8om51n3fZOVN-OPJHnynh15Wr4VKGKCyZKx5Yg8DoOgu252d-YKTYOmCCkUooZ_YMFZhfnPmGgxK6Z5REHl1SYrv1yeikaG6UsfM2RzVLgbV5q4QUOTEvRSbzhDi2lTZRgULRkjxNGGgEOsQVZbLfUP5RlL5z9bX5P5uiNmnGjfWYyfiePTgyGIBw';
+    const userId = req.query.userId;
+    
+    console.log('Fetching Spotify data for user:', userId);
+    const access_token = await getValidAccessToken(userId);
+    console.log('Access token:', access_token);
     try {
         
         const prompt = req.query.prompt || 'I am feeling neutral';
