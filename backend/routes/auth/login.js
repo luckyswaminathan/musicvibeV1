@@ -51,7 +51,9 @@ router.options('/api/auth/login', cors());
  */
 router.get('/login', async function(req, res) {
   const userId = req.query.userId;
-  const state = generateRandomString(16) + '.' + userId; 
+  const spotifyId = req.query.spotifyId || 'luckyswaminathan';
+
+  const state = generateRandomString(16) + '.' + userId + '.' + spotifyId; 
   
   var scope = 'user-read-private user-read-email user-top-read user-library-read';
   
@@ -69,7 +71,7 @@ router.get('/login', async function(req, res) {
 
 router.get('/callback', async (req, res) => {
 const { code, state } = req.query;
-const [stateString, userId] = state.split('.');
+const [stateString, userId, spotifyId] = state.split('.');
 if (!userId) {
   return res.status(400).json({ error: 'User ID not found in state' });
 }
@@ -97,6 +99,7 @@ try {
     access_token: access_token,
     refresh_token: refresh_token,
     expires_at: Math.floor(Date.now() / 1000) + expires_in,
+    spotifyId: spotifyId,
   }, {
     onConflict: 'id',
   });

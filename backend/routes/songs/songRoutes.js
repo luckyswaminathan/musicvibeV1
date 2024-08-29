@@ -3,7 +3,7 @@ const groq = require('../../helpers/groqClient');
 const router = express.Router();
 const supabase = require('../../supabase');
 const axios = require('axios');
-const {parseSpotifyResponse, insertSongs, getValidAccessToken } = require('./songRoutesHelper');
+const {storePlaylistData, parseSpotifyResponse, insertSongs, getValidAccessToken } = require('./songRoutesHelper');
 const { getGroqChatCompletion } = require('../../helpers/groqClient');
 
 /**
@@ -118,7 +118,7 @@ router.get('/recommend', async (req, res) => {
 
 
         const parsedTracks = parseSpotifyResponse(response.data);
-        await insertSongs(parsedTracks);
+        await storePlaylistData(userId, 'playlist 1', parsedTracks);
         res.json(parsedTracks);
         
     } catch (error) {
