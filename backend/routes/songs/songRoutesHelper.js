@@ -1,17 +1,22 @@
 const supabase = require('../../supabase');
 const axios = require('axios');
+const { DateTime } = require('luxon');
 
 async function storePlaylistData(userId, playlistName, playlistData) {
 
   // playlist Name is inputted in search box/ button so is also sent to bakcend(worst case we have default value in text)
   // intended flow --> so we already have all songs generated! --> once we have this json output, we need to create the playlist
   // This will only happen after a user allows the playlist to be created? or we could just do the playlists on site with an option to add it
-  await insertSongs(playlistData);
+  // await insertSongs(playlistData);
+  console.log('Inserted songs into database');
   const spotify_access_token = await getValidAccessToken(userId);
+
+  console.log('Creating playlist for user:', userId);
   
 
-  const response = await supabase.from('users').select('spotify_id').eq('id', userId).single();
-  const username = response.data.spotify_id;
+  const response = await supabase.from('users').select('spotify_username').eq('id', userId).single();
+  const username = response.data.spotify_username;
+
 
  try {
   const playlistCreateResponse = await axios.post(
@@ -27,6 +32,8 @@ async function storePlaylistData(userId, playlistName, playlistData) {
           }
       }
   );
+
+  console.log('Playlist create response:', playlistCreateResponse.data);
   // Process response
   const playlistId = playlistCreateResponse.data.id;
   const timeValue = Math.floor(Date.now() / 1000);
@@ -59,14 +66,14 @@ async function storePlaylistData(userId, playlistName, playlistData) {
   }));
     
 
-  return response.data;
+  // return response.data;
+  return playlistUrl;
 } catch (error) {
   console.error('Error creating playlist:', error);
 }
 
 }
 
-// uuid sample = 6d6eb05b-70cb-43a7-9ccb-b5f4734a63e6
 async function getValidAccessToken(userId) {
   if (!userId) {
     console.error('User ID is undefined');
@@ -75,12 +82,13 @@ async function getValidAccessToken(userId) {
 
   console.log('Getting valid access token for user:', userId);
 
-  // add way to create user--> redirect to login?
   const { data, error } = await supabase
     .from('users')
     .select('access_token, expires_at, refresh_token')
     .eq('id', userId)
     .single();
+
+  console.log('Data:', data);
 
   if (error) {
     throw error;
@@ -90,20 +98,35 @@ async function getValidAccessToken(userId) {
     throw new Error('User not found');
   }
 
-  const now = new Date();
-  const expiresAt = new Date(data.expires_at);
+  const now = DateTime.now().toUTC();
+  const expiresAt = DateTime.fromISO(data.expires_at, { zone: 'utc' });
 
-  console.log('Token expires at:', expiresAt);
-  console.log('Current time:', now);
+  console.log('Token expires at:', expiresAt.toISO());
+  console.log('Current time:', now.toISO());
 
   if (now >= expiresAt) {
+    console.log('Token expired');
     try {
       const refreshResponse = await axios.get(`http://localhost:3001/api/auth/refresh?userId=${userId}&refresh_token=${data.refresh_token}`);
+      console.log('Refresh response:', refreshResponse.data);
+
+      const newExpiresAt = DateTime.now().plus({ seconds: 3600 }).toUTC();
+
+      await supabase.from('users').upsert({
+        id: userId,
+        access_token: refreshResponse.data.access_token,
+        expires_at: newExpiresAt.toSQL({ includeOffset: true }),
+        refresh_token: data.refresh_token
+      }, {
+        onConflict: 'id'
+      });
+
       return refreshResponse.data.access_token;
     } catch (refreshError) {
       throw refreshError;
     }
   }
+  
   return data.access_token;
 }
 

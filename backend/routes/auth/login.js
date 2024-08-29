@@ -4,6 +4,7 @@ const axios = require('axios');
 const supabase = require('../../supabase');
 const querystring = require('querystring');
 const { get } = require('http');
+const {DateTime} = require('luxon');
 
 
 const router = Router();
@@ -51,11 +52,12 @@ router.options('/api/auth/login', cors());
  */
 router.get('/login', async function(req, res) {
   const userId = req.query.userId;
+  console.log('User ID:', userId);
   const spotifyId = req.query.spotifyId || 'luckyswaminathan';
 
   const state = generateRandomString(16) + '.' + userId + '.' + spotifyId; 
   
-  var scope = 'user-read-private user-read-email user-top-read user-library-read';
+  var scope = 'user-read-private user-read-email user-top-read user-library-read playlist-modify-private';
   
 
   const url = 'https://accounts.spotify.com/authorize?' +
@@ -72,6 +74,8 @@ router.get('/login', async function(req, res) {
 router.get('/callback', async (req, res) => {
 const { code, state } = req.query;
 const [stateString, userId, spotifyId] = state.split('.');
+console.log('userId', userId);
+console.log('spotifyId', spotifyId);
 if (!userId) {
   return res.status(400).json({ error: 'User ID not found in state' });
 }
@@ -92,17 +96,23 @@ try {
     },
   });
 
-  const { access_token, refresh_token, expires_in } = tokenResponse.data;
+  console.log('Token response:', tokenResponse.data);
 
-  await supabase.from('users').upsert({
+  const { access_token, refresh_token, expires_in } = tokenResponse.data;
+  const expiresAt = DateTime.now().plus({ seconds: 3600}).toUTC();
+  const formattedExpiresAt = expiresAt.toSQL({ includeOffset: true });
+  const response = await supabase.from('users').upsert({
     id: userId,
     access_token: access_token,
     refresh_token: refresh_token,
-    expires_at: Math.floor(Date.now() / 1000) + expires_in,
-    spotifyId: spotifyId,
+    expires_at: formattedExpiresAt,
+    spotify_username: spotifyId,
   }, {
     onConflict: 'id',
   });
+
+  console.log('Upsert response:', response);
+
   console.log('Upserted token:', access_token, userId);
   
   return res.json({
@@ -117,6 +127,7 @@ try {
 
 router.get('/refresh', async (req, res) => {
   const { refresh_token, userId } = req.query;
+  console.log('Refreshing token for user:', userId);
   
 
   if (!refresh_token) {
