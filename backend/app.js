@@ -9,7 +9,10 @@ const app = express()
 const songRoutes = require('./routes/songs/songRoutes')
 const authRoutes = require('./routes/auth/login')
 const promptRoutes = require('./routes/prompts/prompts')
-app.use(express.json())
+const playlistRoutes = require('./routes/playlists/playlists')
+const bodyParser = require('body-parser');
+app.use(express.json());
+app.use(bodyParser.json());
 app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true,
@@ -39,6 +42,7 @@ app.use('/api/auth', authRoutes)
 
 app.use('/api/songs', songRoutes);
 app.use('/api/prompts', promptRoutes);
+app.use('/api/playlists', playlistRoutes);
 app.listen(3001, () => {
     console.log(`Server is running on port 3001`)
     });

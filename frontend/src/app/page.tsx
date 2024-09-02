@@ -34,7 +34,7 @@ export default async function Home() {
       <AuthButtonServer/>
       </div>
     </div>
-      <SongComponent name={"Song Name"} url={"https://i.scdn.co/image/ab67616d0000b2733f203b8d0d8e54fab416a825"} access_token={accessToken}/>
+      <SongComponent name={"Song Name"} url={"https://i.scdn.co/image/ab67616d0000b2733f203b8d0d8e54fab416a825"}/>
       </div>
 
     

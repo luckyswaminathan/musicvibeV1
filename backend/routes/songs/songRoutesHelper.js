@@ -34,12 +34,14 @@ async function storePlaylistData(userId, playlistName, playlistData) {
       }
     );
 
+
     console.log('Playlist create response:', playlistCreateResponse.data);
     
     const playlistId = playlistCreateResponse.data.id;
     const timeValue = Math.floor(Date.now() / 1000);
     const timestamptzString = unixToTimestamptz(timeValue);
     const playlistUrl = playlistCreateResponse.data.external_urls.spotify;
+    console.log('Playlist URL:', playlistUrl);
 
     const response = await supabase.from('user_playlists').upsert({
       user_id: userId,
@@ -67,8 +69,9 @@ async function storePlaylistData(userId, playlistName, playlistData) {
       }
     );
     console.log(responseN);
+    await addCoverImage(playlistId, spotify_access_token);
 
-    return trackUris;
+    return playlistUrl;
   } catch (error) {
     console.error('Error creating playlist:', error);
     throw error;
@@ -203,6 +206,39 @@ async function refreshToken(userId, refresh_token) {
     }); 
   } catch (error) {
     return res.status(500).json({ error: 'Failed to exchange authorization code for token' });
+  }
+}
+
+async function addCoverImage(playlistId, accessToken) {
+  try {
+    const response = await axios.get(`https://api.spotify.com/v1/playlists/${playlistId}/images`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    if (response.data && response.data.length > 0) {
+      const playlistUrl = response.data[0].url;
+    
+      const { data, error } = await supabase
+        .from('user_playlists')
+        .update({ cover_image_url: playlistUrl })
+        .eq('playlist_id', playlistId);
+
+      if (error) {
+        console.error('Error updating cover image URL:', error);
+        throw error;
+      }
+
+      console.log('Cover image URL updated successfully');
+      return playlistUrl;
+    } else {
+      console.warn('No cover image found for playlist');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error in getCoverImage:', error);
+    throw error;
   }
 }
 

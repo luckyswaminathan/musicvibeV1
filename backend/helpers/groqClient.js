@@ -1,7 +1,9 @@
 
 const Groq = require('groq-sdk');
 
-const groq = new Groq({apiKey: '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'});
+const groq = new Groq({
+  apiKey: process.env.GROQ_KEY,
+});
 
 function extractParameter(content, parameterName) {
     // Create a regular expression pattern that looks for the specific parameter
@@ -28,6 +30,41 @@ async function generatePrompt() {
     });
 
     return response.choices[0]?.message?.content;
+}
+
+
+function extractTitle(text) {
+    const startDelimiter = "###";
+
+    // Find the starting index of the title
+    const startIndex = text.indexOf(startDelimiter) + startDelimiter.length;
+
+    // Check if the start delimiter was found
+    if (startIndex !== -1) {
+        // Extract the title until the end of the line or string
+        const endOfLineIndex = text.indexOf("\n", startIndex);
+        const endIndex = endOfLineIndex !== -1 ? endOfLineIndex : text.length;
+        
+        const playlistTitle = text.substring(startIndex, endIndex).trim();
+        return playlistTitle;
+    } else {
+        // If the start delimiter is not found, return a default message or handle the error
+        return "Title not found";
+    }
+}
+async function getGroqPlaylistTitle(title) {
+    const response = await groq.chat.completions.create({
+        messages: [
+            {
+                role: "user",
+                content: 'You are an AI that generates Spotify playlist titles based on a sentiment analysis of text. Given the following prompt: "'
+                 + title + '" Generate a playlist title, I want it to be in an aesthetic format - ie. raindrops pattering down an open window, a view of sonder, etc. and wrap it in three hash symbols (###) before the title.`'
+            }
+        ],
+        model: "llama3-8b-8192",
+    })
+    
+    return extractTitle(response.choices[0]?.message?.content.toString());
 }
 
 async function getGroqChatCompletion(prompt) {
@@ -208,4 +245,4 @@ async function getGroqChatCompletion(prompt) {
     return parameters;
 }
 
-module.exports = { groq, getGroqChatCompletion, generatePrompt };
+module.exports = { groq, getGroqChatCompletion, getGroqPlaylistTitle, generatePrompt };
