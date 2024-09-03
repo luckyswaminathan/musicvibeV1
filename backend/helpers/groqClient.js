@@ -58,7 +58,7 @@ async function getGroqPlaylistTitle(title) {
             {
                 role: "user",
                 content: 'You are an AI that generates Spotify playlist titles based on a sentiment analysis of text. Given the following prompt: "'
-                 + title + '" Generate a playlist title, I want it to be in an aesthetic format - ie. raindrops pattering down an open window, a view of sonder, etc. and wrap it in three hash symbols (###) before the title.`'
+                 + title + '" Generate a playlist title, make it relatively descriptive in a lowercase format with a sad aesthetic. etc. and wrap it in three hash symbols (###) before the title.`'
             }
         ],
         model: "llama3-8b-8192",

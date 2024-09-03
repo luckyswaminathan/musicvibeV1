@@ -29,7 +29,7 @@ export default async function Home() {
     <div style={{ display: 'flex', flexDirection: 'row', marginTop:'50px', marginLeft: '50px 0', gap:'200px'
     }}>
       <MusicVibe />
-      <Navbar />
+      {/* <Navbar /> */}
       <div style = {{marginLeft: '100px', marginTop: '25px'}}>
       <AuthButtonServer/>
       </div>

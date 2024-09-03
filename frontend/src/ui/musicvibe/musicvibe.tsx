@@ -4,7 +4,7 @@ import React from 'react';
 export default function MusicVibe() {
     return (
         <div className="musicvibe">
-            DayList
+            MusicVibe
         </div>
     );
 }

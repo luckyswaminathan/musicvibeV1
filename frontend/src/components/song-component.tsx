@@ -4,7 +4,7 @@ import { Button } from "@/components/button"  // Make sure this path is correct
 import SongImage from "@/components/song-image";
 import { Input } from "@/components/ui/input"
 import Prompt from "@/components/prompt"
-import { ComboboxGenres } from './playlist-component';
+import { ComboboxGenres } from './combobox';
 import './song-component.css';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import axios from 'axios';
