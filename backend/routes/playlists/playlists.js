@@ -4,7 +4,8 @@ const { getUserPlaylists,getPlaylistUrl } = require('./playlistHelpers');
 
 router.get('/list', async (req, res) => {
     const userId = req.query.userId;
-    const playlists = await getUserPlaylists(userId);
+    const limit = req.query.limit || 50;
+    const playlists = await getUserPlaylists(userId, limit);
     res.json(playlists);
 });
 

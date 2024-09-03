@@ -129,8 +129,7 @@ async function getValidAccessToken(userId) {
     throw error;
   }
   if (!data) {
-    console.error('User not found');
-    throw new Error('User not found');
+    res.redirect('/login');
   }
 
   const now = DateTime.now().toUTC();

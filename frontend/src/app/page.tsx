@@ -9,7 +9,8 @@ import MusicVibe from "@/ui/musicvibe/musicvibe";
 import { Button } from "@/components/button"
 import SongImage from "@/components/song-image";
 import SongComponent from "@/components/song-component";
-import PlaylistPage from "./playlist/page";
+import PlaylistPage from "./playlists/page";
+import PlaylistComponent from "@/components/playlistcomponent";
 export default async function Home() {
   console.log(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const supabase = createServerComponentClient({ cookies }, {

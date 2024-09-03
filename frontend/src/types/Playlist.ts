@@ -1,7 +1,7 @@
 
 export type Playlist = {
-    playlist_id: string;
-    user_id: string;
+    playlistName: any;
+    playlistId: string;
     name: string;
     created_at: string;
     playlist_url: string;
