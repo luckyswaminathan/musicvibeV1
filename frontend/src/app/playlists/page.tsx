@@ -14,6 +14,7 @@ import { Button } from "@/components/button";
 import { Playlist } from '../../types/Playlist';
 import PlaylistComponent from '@/components/playlistcomponent';
 import MusicVibe from '@/components/musicvibe/musicvibe';
+import PlaylistButton from '@/components/playlistbutton';
 const axios = require('axios');
 const supabase = createClientComponentClient();
 
@@ -60,7 +61,11 @@ export default function PlaylistPage() {
     <div className="flex flex-col">
 
       <div className="container mx-auto p-4">
-      <div className="flex"> <MusicVibe></MusicVibe><h1 className="text-2xl font-bold mb-6">Your Playlists</h1></div>
+      <div style={{ display: 'flex', flexDirection: 'row', marginTop: '50px', marginLeft: '50px 0', gap: '200px' }}>
+      <MusicVibe />
+      <PlaylistButton />
+  
+    </div>
       <Accordion type="single" collapsible>
         {playlists.map((playlist) => (
           <AccordionItem key={playlist.playlistId} value={playlist.playlistId}>

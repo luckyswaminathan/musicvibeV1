@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
+.bubbly-font {
+  font-family: 'Fredoka One', cursive;
+  font-size: 48px;
+  font-weight: normal;
+  color: #fafafa;
+  text-shadow: 
+    2px 2px 0px #FFB6B6,
+    4px 4px 0px rgba(0,0,0,0.1);
+  letter-spacing: 2px;
+  -webkit-text-stroke: 1px #FF9B9B;
+  text-stroke: 1px #FF9B9B;
+}
+
+.wavy-letter {
+  display: inline-block;
+  animation: wavyText 2s ease-in-out infinite;
+}
+
+.wavy-letter:nth-child(2n) {
+  animation-delay: 0.1s;
+}
+
+.wavy-letter:nth-child(3n) {
+  animation-delay: 0.2s;
+}
+
+@keyframes wavyText {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Optional: Add a hover effect for interactivity */
+.bubbly-font:hover .wavy-letter {
+  animation-play-state: paused;
+}
+
+/* Responsive font size */
+@media (max-width: 768px) {
+  .bubbly-font {
+    font-size: 36px;
+  }
+}
