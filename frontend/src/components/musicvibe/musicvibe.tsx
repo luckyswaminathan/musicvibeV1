@@ -11,7 +11,7 @@ function handleClick() {
 export default function MusicVibe() {
     return (
         <div>
-            <Button variant="ghost" onClick={handleClick}> MusicVibe </Button>
+            <a href="/" style={{}}> MusicVibe </a>
         </div>
     );
 }

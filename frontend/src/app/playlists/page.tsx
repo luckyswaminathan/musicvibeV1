@@ -10,15 +10,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-
-} from "@/components/ui/hover-card";
+import { Button } from "@/components/button";
 import { Playlist } from '../../types/Playlist';
 import PlaylistComponent from '@/components/playlistcomponent';
-import MusicVibe from '@/ui/musicvibe/musicvibe';
+import MusicVibe from '@/components/musicvibe/musicvibe';
 const axios = require('axios');
 const supabase = createClientComponentClient();
 
@@ -58,11 +53,12 @@ export default function PlaylistPage() {
     getPlaylists();
   }, []);
 
-  if (loading) return <div>Loading playlists...</div>;
+  if (loading) return <div>Loading playlists... </div>;
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div>
+    <div className="flex flex-col">
+
       <div className="container mx-auto p-4">
       <div className="flex"> <MusicVibe></MusicVibe><h1 className="text-2xl font-bold mb-6">Your Playlists</h1></div>
       <Accordion type="single" collapsible>
@@ -73,19 +69,35 @@ export default function PlaylistPage() {
                 {playlist.cover_image_url && (
                   <img
                     src={playlist.cover_image_url}
-                    alt={playlist.name}
+                    alt={playlist.playlistName}
                     width={50}
                     height={50}
                     className="rounded-md mr-4"
                   />
                 )}
-                <h3 className="text-lg font-semibold">{playlist.name}</h3>
+                <h3 className="text-lg font-semibold">{playlist.playlistName}</h3>
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="p-4 bg-gray-100 rounded-md">
-                <p>Created at: {new Date(playlist.created_at).toLocaleString()}</p>
-                {/* Add more details here if needed */}
+              <div className="p-4 rounded-md">
+                <p>Created at: {new Date(playlist.createdAt).toLocaleString()}</p>
+                {playlist.playlistUrl && (
+                <div className="mt-4">
+                  <Button
+                    variant="default"
+                    className="bg-black text-white hover:bg-gray-800 rounded-lg"
+                  >
+                    <a 
+                      href={playlist.playlistUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-white no-underline"
+                    >
+                      Listen on Spotify
+                    </a>
+                  </Button>
+                </div>
+              )}
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -93,5 +105,6 @@ export default function PlaylistPage() {
       </Accordion>
     </div>
     </div>
+
   );
 }
